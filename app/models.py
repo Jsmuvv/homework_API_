@@ -12,8 +12,11 @@ class Task(db.Model):
     completed = db.Column(db.Boolean,nullable=False,default=False)
     created_at = db.Column(db.DateTime,nullable=False,default=datetime.utcnow)
     due_date = db.Column(db.DateTime)
-    token = db.Column(db.String(32),index = True, unique=True)
-    token_expiration = db.Column(db.DateTime)
+
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
+        db.session.add(self)
+        db.session.commit()
 
     def update(self,**kwargs):
         allowed_fields = {"title","description"}
@@ -29,11 +32,16 @@ class Task(db.Model):
     def to_dict(self):
         return {
             "id":self.id,
-            "title": self.username,
-            "completed":self.email,
+            "title": self.title,
+            "description":self.description,
+            "completed":self.completed,
             "created_at":self.created_at,
             "due_date":self.due_date
         }
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 class User(db.Model):
     id = db.Column(db.Integer,primary_key = True)

@@ -42,22 +42,16 @@ def create_task():
     if missing_fields:
         return {'error': f"{', '.join(missing_fields)} must be in the request body"}, 400
 
+
     title = data.get('title')
     description = data.get("description")
+    completed=data.get('completed',False)
 
-# Create task
-    new_task = {
-        "id" : len(tasks_list) + 1,
-        "title": title,
-        "description": description,
-        "completed": False,
-        "createdAt": datetime.utcnow()
-    }
+    new_task = Task(title=title,description=description,completed=completed)
+    return new_task.to_dict(),201
 
-    tasks_list.append(new_task)
-    return new_task,    201
-# Update
-@app.route("/tasks/<int:task_id>", method= ["PUT"])
+# Update task
+@app.route("/tasks/<int:task_id>", methods= ["PUT"])
 @token_auth.login_required
 def edit_task(task_id):
     if not request.is_json:
@@ -74,7 +68,7 @@ def edit_task(task_id):
 
 
 
-#  Create New User
+#  Create Token
 
 @app.route('/token')
 @basic_auth.login_required
@@ -87,7 +81,7 @@ def get_token():
 
 
 
-
+#  Create New User
 
 @app.route('/users',methods = ['POST'])
 def create_user():
@@ -148,11 +142,25 @@ def delete_user(user_id):
     user = db.session.get(User,user_id)
     current_user = token_auth.current_user()
     if user is None:
-        return {"error":f"User woth {user_id} not found!"},404
+        return {"error":f"User with {user_id} not found!"},404
     if user is not current_user:
         return {"error": "You cant do that, delete yourself only"},403
     user.delete()
     return {"success":f"{user.username} has been deleted"}
+
+@app.route("/tasks/<int:task_id>", methods = ["DELETE"])
+@token_auth.login_required
+def delete_task(task_id):
+    task = db.session.get(Task,task_id)
+    current_task = token_auth.current_task
+    if task is None:
+        return {"error":f"User with {task_id} not found!"},404
+    if task is not current_task:
+        return {"error": "You cant do that, delete yourself only"},403
+    task.delete()
+    return {"success":f"{task.id} has been deleted"}
+
+
 # retrieve
 @app.get("/users/<int:user_id>")
 def get_user(user_id):
